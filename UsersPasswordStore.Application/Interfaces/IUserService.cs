@@ -14,7 +14,7 @@ namespace UsersPasswordStore.Application.Interfaces
         List<string> GetPasswordList();
         UsersPassword GetSingleItem();
         List<UsersPassword> GetListItem(List<UsersPassword> lstUsers);
-        UsersPassword UpdatePassword(string newPass, UsersPassword usersPassword);
+        void UpdatePassword(string newPass,string oldPass);
         bool RemoveCache();
     }
 }

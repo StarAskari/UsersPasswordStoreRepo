@@ -76,6 +76,7 @@ namespace UsersPasswordStore.Application.Services
 
         public List<UsersPassword> GetListItem(List<UsersPassword> usersPasswords)
         {
+
             var userInfoKey = "UsersPassword_{ID}";
             var cachedUserInfo = _memoryCacheService.Get<UsersPassword>(userInfoKey);
             if(cachedUserInfo.Count > 0)
@@ -136,19 +137,22 @@ namespace UsersPasswordStore.Application.Services
 
         }
 
-        public UsersPassword UpdatePassword(string newPass, UsersPassword usersPassword)
+        public void UpdatePassword(string newPass,string oldPass)
         {
             var userInfoKey = "UsersPassword_{ID}";
-            var encryptedPassword = Encrypt(newPass);
-            usersPassword.EncryptedPassword = encryptedPassword;
+            string cachedPassword;
 
-
-           
-            _memoryCacheService.Set(userInfoKey, usersPassword, DateTime.Now.AddDays(1).Minute, DateTime.Now.AddHours(1).Minute);
-            var userPass = _memoryCacheService.Get<UsersPassword>(userInfoKey).FirstOrDefault();
-            return userPass;
-
-
+            var userList = _memoryCacheService.Get<UsersPassword>(userInfoKey);
+            userList.ForEach(u =>u.EncryptedPassword= Decrypt(u.EncryptedPassword));
+            
+            var UsersPass = userList.FirstOrDefault(u => u.EncryptedPassword == oldPass);
+            if (UsersPass != null)
+            {
+                var encryptedPassword = Encrypt(newPass);
+                UsersPass.EncryptedPassword = encryptedPassword;
+                _memoryCacheService.Set(userInfoKey, UsersPass, DateTime.Now.AddDays(1).Minute, DateTime.Now.AddHours(1).Minute);
+            } 
+            
         }
 
         public bool RemoveCache()
@@ -156,7 +160,7 @@ namespace UsersPasswordStore.Application.Services
             var userInfoKey = "UsersPassword_{ID}";
             _memoryCacheService.Remove(userInfoKey);
             var data = _memoryCacheService.Get<UsersPassword>(userInfoKey);
-            if (data.Count == 0)
+            if (data == null)
             {
                 return true;
             }
