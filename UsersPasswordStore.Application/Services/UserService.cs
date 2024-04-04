@@ -19,6 +19,7 @@ namespace UsersPasswordStore.Application.Services
     {
         private readonly IMemoryCacheService _memoryCacheService;
         private readonly IConfiguration _configuration;
+        public const string userInfoKey = "UsersPassword_{ID}";
         public UserService(IMemoryCacheService memoryCacheService, IConfiguration configuration) { 
         
             _memoryCacheService = memoryCacheService;
@@ -30,7 +31,7 @@ namespace UsersPasswordStore.Application.Services
             
             try
             {
-                var userInfoKey = "UsersPassword_{ID}";
+                
                 users.ForEach(user => user.EncryptedPassword = Encrypt(user.EncryptedPassword));
                 
                 //var serializedList = JsonConvert.SerializeObject(users);
@@ -77,7 +78,7 @@ namespace UsersPasswordStore.Application.Services
         public List<UsersPassword> GetListItem(List<UsersPassword> usersPasswords)
         {
 
-            var userInfoKey = "UsersPassword_{ID}";
+           
             var cachedUserInfo = _memoryCacheService.Get<UsersPassword>(userInfoKey);
             if(cachedUserInfo.Count > 0)
             {
@@ -106,7 +107,7 @@ namespace UsersPasswordStore.Application.Services
 
         public List<string> GetPasswordList()
         {
-            var userInfoKey = "UsersPassword_{ID}"; 
+            
             List<string> passwordList = new List<string>();
             List<UsersPassword> usersPasswords = new List<UsersPassword>();
             var userInfo = _memoryCacheService.Get<UsersPassword>(userInfoKey);
@@ -122,7 +123,7 @@ namespace UsersPasswordStore.Application.Services
 
         public UsersPassword GetSingleItem()
         {
-            var userInfoKey = "UsersPassword_{ID}";
+            
             UsersPassword userPass = new UsersPassword();
            
             var userInfo = _memoryCacheService.Get<UsersPassword>(userInfoKey);
@@ -139,7 +140,7 @@ namespace UsersPasswordStore.Application.Services
 
         public void UpdatePassword(string newPass,string oldPass)
         {
-            var userInfoKey = "UsersPassword_{ID}";
+            
             string cachedPassword;
 
             var userList = _memoryCacheService.Get<UsersPassword>(userInfoKey);
@@ -157,7 +158,7 @@ namespace UsersPasswordStore.Application.Services
 
         public bool RemoveCache()
         {
-            var userInfoKey = "UsersPassword_{ID}";
+
             _memoryCacheService.Remove(userInfoKey);
             var data = _memoryCacheService.Get<UsersPassword>(userInfoKey);
             if (data == null)
