@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -15,29 +15,30 @@ using static System.Formats.Asn1.AsnWriter;
 
 namespace UsersPasswordStore.Application.Services
 {
-    public class UserService: IUserService
+    public class UserService : IUserService
     {
         private readonly IMemoryCacheService _memoryCacheService;
-        private readonly IConfiguration _configuration;
-        public const string userInfoKey = "UsersPassword_{ID}";
-        public UserService(IMemoryCacheService memoryCacheService, IConfiguration configuration) { 
-        
+        public UserService(IMemoryCacheService memoryCacheService)
+        {
+
             _memoryCacheService = memoryCacheService;
-            _configuration = configuration;
         }
 
-        public List<UsersPassword> InsertNewUser(List<UsersPassword> users)
+        public void InsertNewUser(UsersPassword user)
         {
-            
+
             try
             {
-                
-                users.ForEach(user => user.EncryptedPassword = Encrypt(user.EncryptedPassword));
-                
-                //var serializedList = JsonConvert.SerializeObject(users);
-                _memoryCacheService.Set(userInfoKey, users, DateTime.Now.AddDays(1).Minute, DateTime.Now.AddHours(1).Minute);
-                var userList = _memoryCacheService.Get<UsersPassword>(userInfoKey);
-                return userList;
+                string key = user.UserName;
+
+                var userList = _memoryCacheService.Get<UsersPassword>(key);
+                if (userList is null)
+                    userList = new List<UsersPassword>();
+                user.EncryptedPassword = Encrypt(user.EncryptedPassword);
+                userList.Add(user);
+                _memoryCacheService.Set(key, userList);
+
+
 
             }
             catch (InvalidOperationException ex)
@@ -49,10 +50,129 @@ namespace UsersPasswordStore.Application.Services
             {
                 throw ex;
             }
-            
+
         }
 
-        public string Encrypt (string password)
+        public List<string>? GetAllPasswordOfUser(string username)
+        {
+
+            try
+            {
+                string ret = string.Empty;
+
+                var userList = _memoryCacheService.Get<UsersPassword>(username);
+                if (userList is not null)
+                    return userList.Select(x => x.EncryptedPassword).ToList();
+
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw ex;
+            }
+
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return null;
+
+        }
+
+        public UsersPassword? GetSingleOrDefaultItem(string username,int id)
+        {
+            try
+            {
+
+                var userList = _memoryCacheService.Get<UsersPassword>(username);
+                if (userList is not null)
+                    return userList.SingleOrDefault(x=>x.Id==id);
+                
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            return null;
+        }
+
+        public UsersPassword? GetSingleOrDefaultItemWithDecryptedPassword(string username,int id)
+        {
+            try
+            {
+                UsersPassword? usersPassword = GetSingleOrDefaultItem(username,id);
+                if (usersPassword is not null)
+                {
+                    usersPassword.DecryptedPassword = Decrypt(usersPassword.EncryptedPassword);
+                    usersPassword.EncryptedPassword = usersPassword.DecryptedPassword;
+                    return usersPassword;
+                }
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public bool UpdateUser(UsersPassword user)
+        {
+            try
+            {
+                var userList = _memoryCacheService.Get<UsersPassword>(user.UserName);
+                if (userList is not null){
+                    var userForUpdate = userList.FirstOrDefault(x => x.Id == user.Id);
+                    if (userForUpdate is null)
+                        return false;
+
+
+                    userForUpdate.EncryptedPassword = Encrypt(user.EncryptedPassword);
+                    _memoryCacheService.Reset(user.UserName);
+                    _memoryCacheService.Set(user.UserName, userList);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            return true;
+
+        }
+
+        public bool DeleteUser(UsersPassword user)
+        {
+            try
+            {
+                string ret = string.Empty;
+
+                var userList = _memoryCacheService.Get<UsersPassword>(user.UserName);
+                if (userList is not null){
+                    var userForDelete = userList.FirstOrDefault(x => x.Id == user.Id);
+                    if (userForDelete is null)
+                        return false;
+
+                    userList.Remove(userForDelete);
+                    _memoryCacheService.Reset(user.UserName);
+                    _memoryCacheService.Set(user.UserName, userList);
+                }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+
+            return true;
+        }
+
+
+        public string Encrypt(string password)
         {
             DataProtectionScope scope = DataProtectionScope.CurrentUser;
             var data = Encoding.Unicode.GetBytes(password);
@@ -60,7 +180,8 @@ namespace UsersPasswordStore.Application.Services
             return Convert.ToBase64String(encrypted);
         }
 
-        public string Decrypt(string encryptedPass)
+
+        private string Decrypt(string encryptedPass)
         {
             DataProtectionScope scope = DataProtectionScope.CurrentUser;
             if (encryptedPass == null) throw new ArgumentNullException("encryptedPass");
@@ -75,99 +196,6 @@ namespace UsersPasswordStore.Application.Services
 
 
 
-        public List<UsersPassword> GetListItem(List<UsersPassword> usersPasswords)
-        {
-
-           
-            var cachedUserInfo = _memoryCacheService.Get<UsersPassword>(userInfoKey);
-            if(cachedUserInfo.Count > 0)
-            {
-                return cachedUserInfo;
-            }
-            return null;
-        }
-
-        public List<UsersPassword> GetCachedArrayList(string cacheKey, out string cachedList)
-        {
-            if (_memoryCacheService.TryGetValue(cacheKey, out cachedList))
-            {
-                // Deserialize the JSON string back to a list
-                return JsonConvert.DeserializeObject<List<UsersPassword>>(cachedList);
-            }
-            else
-            {
-                // The list is not found in the cache
-                return null; // Or return an empty list, depending on your logic
-            }
-        }
-
-
-
-
-
-        public List<string> GetPasswordList()
-        {
-            
-            List<string> passwordList = new List<string>();
-            List<UsersPassword> usersPasswords = new List<UsersPassword>();
-            var userInfo = _memoryCacheService.Get<UsersPassword>(userInfoKey);
-            if (userInfo != null)
-            {
-                    passwordList=userInfo.Select(u=>u.EncryptedPassword).ToList();
-                
-            }
-            return passwordList;
-        }
-
-
-
-        public UsersPassword GetSingleItem()
-        {
-            
-            UsersPassword userPass = new UsersPassword();
-           
-            var userInfo = _memoryCacheService.Get<UsersPassword>(userInfoKey);
-            if (userInfo != null)
-            {
-                userPass = userInfo.FirstOrDefault();
-                userPass.EncryptedPassword = Decrypt(userPass.EncryptedPassword);
-
-            }
-            return userPass;
-           
-
-        }
-
-        public void UpdatePassword(string newPass,string oldPass)
-        {
-            
-            string cachedPassword;
-
-            var userList = _memoryCacheService.Get<UsersPassword>(userInfoKey);
-            userList.ForEach(u =>u.EncryptedPassword= Decrypt(u.EncryptedPassword));
-            
-            var UsersPass = userList.FirstOrDefault(u => u.EncryptedPassword == oldPass);
-            if (UsersPass != null)
-            {
-                var encryptedPassword = Encrypt(newPass);
-                UsersPass.EncryptedPassword = encryptedPassword;
-                _memoryCacheService.Set(userInfoKey, UsersPass, DateTime.Now.AddDays(1).Minute, DateTime.Now.AddHours(1).Minute);
-            } 
-            
-        }
-
-        public bool RemoveCache()
-        {
-
-            _memoryCacheService.Remove(userInfoKey);
-            var data = _memoryCacheService.Get<UsersPassword>(userInfoKey);
-            if (data == null)
-            {
-                return true;
-            }
-            else return false;
-
-        }
 
 
     }

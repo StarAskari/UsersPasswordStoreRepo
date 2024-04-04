@@ -18,17 +18,15 @@ namespace UsersPasswordStore.Api.Controllers
         }
 
         [HttpPost("InsertUsersPassword")]
-        public IActionResult InsertNewUser(List<UsersPassword> lstUsersPass)
+        public IActionResult InsertNewUser(UsersPassword usersPassword)
         {
-           
+
             try
             {
 
-                  var UsersPass = _userService.InsertNewUser(lstUsersPass);
+                _userService.InsertNewUser(usersPassword);
 
-               
-                
-                return Ok(UsersPass);
+                return Ok();
             }
             catch (Exception ex)
             {
@@ -36,12 +34,12 @@ namespace UsersPasswordStore.Api.Controllers
             }
         }
 
-        [HttpGet("GetpasswordList")]
-        public IActionResult GetPasswordList()
+        [HttpGet("GetAllPasswordOfUser")]
+        public IActionResult GetAllPasswordOfUser(string username)
         {
             try
             {
-                var passwordList = _userService.GetPasswordList();
+                var passwordList = _userService.GetAllPasswordOfUser(username);
                 if (passwordList != null)
                 {
                     return Ok(passwordList);
@@ -58,12 +56,12 @@ namespace UsersPasswordStore.Api.Controllers
         }
 
 
-        [HttpGet("GetSingleUserspassword")]
-        public IActionResult GetSingleList()
+        [HttpGet("GetSingleOrDefaultItem")]
+        public IActionResult GetSingleOrDefaultItem(string username, int id)
         {
             try
             {
-                var singleUsersPassword = _userService.GetSingleItem();
+                var singleUsersPassword = _userService.GetSingleOrDefaultItem(username, id);
                 if (singleUsersPassword != null)
                 {
                     return Ok(singleUsersPassword);
@@ -79,12 +77,12 @@ namespace UsersPasswordStore.Api.Controllers
             }
         }
 
-        [HttpGet("GetSingleUsersDecryptPassword")]
-        public IActionResult GetSingleDecryptPassList()
+        [HttpGet("GetSingleOrDefaultItemWithDecryptedPassword")]
+        public IActionResult GetSingleOrDefaultItemWithDecryptedPassword(string username, int id)
         {
             try
             {
-                var singleUsersPassword = _userService.GetSingleItem();
+                var singleUsersPassword = _userService.GetSingleOrDefaultItemWithDecryptedPassword(username, id);
                 if (singleUsersPassword != null)
                 {
                     return Ok(singleUsersPassword);
@@ -100,15 +98,15 @@ namespace UsersPasswordStore.Api.Controllers
             }
         }
 
-        [HttpPut("UpdatePasswordofUsers")]
-        public IActionResult UpdatePasswordofUsers(string newPass,string oldPass)
+        [HttpPut("UpdateUser")]
+        public IActionResult UpdateUser(UsersPassword user)
         {
             try
             {
 
-                    _userService.UpdatePassword(newPass, oldPass);
-                    return Ok("Entry Updated");
-               
+                _userService.UpdateUser(user);
+                return Ok("Entry Updated");
+
             }
             catch (Exception ex)
             {
@@ -117,17 +115,17 @@ namespace UsersPasswordStore.Api.Controllers
         }
 
 
-        [HttpDelete("RemoveCacheData")]
-        public IActionResult RemoveDta()
+        [HttpDelete("DeleteUser")]
+        public IActionResult DeleteUser(UsersPassword user)
         {
             try
             {
-                bool isDelete = _userService.RemoveCache();
+                bool isDelete = _userService.DeleteUser(user);
 
                 if (isDelete == true)
                 {
 
-                   
+
                     return Ok("Data successfully Removed From cache");
                 }
                 else
