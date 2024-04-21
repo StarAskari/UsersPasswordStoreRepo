@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  userspasswordstore:
+    image: ${DOCKER_REGISTRY-}userspasswordstore
+    build:
+      context: .
+      dockerfile: Dockerfile

@@ -127,7 +127,8 @@ namespace UsersPasswordStore.Application.Services
                 var userList = _memoryCacheService.Get<UsersPassword>(user.UserName);
                 if (userList is not null){
                     var userForUpdate = userList.FirstOrDefault(x => x.Id == user.Id);
-                    if (userForUpdate is null)
+                    if (userForUpdate is
+                        null)
                         return false;
 
 
@@ -141,6 +142,7 @@ namespace UsersPasswordStore.Application.Services
                 Console.WriteLine(e);
                 throw;
             }
+
 
             return true;
 
